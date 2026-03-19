@@ -3,12 +3,14 @@ import react from "@vitejs/plugin-react";
 import federation from "@originjs/vite-plugin-federation";
 
 export default defineConfig({
+  base: "/",
   plugins: [
     react(),
     federation({
-  name: "communityApp",
-  remotes: {
-    authApp: "http://localhost:4173/assets/remoteEntry.js",
+  name: "authApp",
+  filename: "remoteEntry.js",
+  exposes: {
+    "./Navbar": "./src/components/Navbar.jsx",
   },
   shared: {
     react: { singleton: true, eager: true },
@@ -19,6 +21,14 @@ export default defineConfig({
 }),
   ],
   server: {
-    port: 5174,
+    port: 5173,
+    cors: true,
+  },
+  build: {
+    target: "esnext",
+    minify: false,
+    cssCodeSplit: false,
+
+   
   },
 });

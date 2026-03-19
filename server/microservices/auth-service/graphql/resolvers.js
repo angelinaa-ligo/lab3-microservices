@@ -113,9 +113,14 @@ const resolvers = {
     },
 
     logout: async (_, __, { res }) => {
-      res.clearCookie("token");
-      return true;
-    },
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/", 
+  });
+
+  return true;
+},
   },
 };
 

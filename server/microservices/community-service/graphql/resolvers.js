@@ -31,9 +31,10 @@ const resolvers = {
     helpRequests: async () => {
       return HelpRequest.find();
     },
+    
+    
   },
-
-  
+ 
   Mutation: {
     createPost: async (_, { title, content, category }, { req }) => {
       const user = getUserFromRequest(req);
@@ -42,11 +43,13 @@ const resolvers = {
       }
 
       return CommunityPost.create({
-        author: user.id,
-        title,
-        content,
-        category,
-      });
+  author: user.id,
+  authorName: user.username,
+  authorRole: user.role,
+  title,
+  content,
+  category,
+});
     },
 
     createHelpRequest: async (
@@ -67,20 +70,29 @@ const resolvers = {
     },
 
     resolveHelpRequest: async (_, { id }, { req }) => {
-      const user = getUserFromRequest(req);
-      if (!user) {
-        throw new Error("Not authenticated");
-      }
+  const user = getUserFromRequest(req);
 
-      return HelpRequest.findByIdAndUpdate(
-        id,
-        {
-          isResolved: true,
-          updatedAt: new Date(),
-        },
-        { new: true }
-      );
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  
+  if (
+    user.role !== "business_owner" &&
+    user.role !== "community_organizer"
+  ) {
+    throw new Error("Not authorized");
+  }
+
+  return HelpRequest.findByIdAndUpdate(
+    id,
+    {
+      isResolved: true,
+      updatedAt: new Date(),
     },
+    { new: true }
+  );
+},
   },
 };
 

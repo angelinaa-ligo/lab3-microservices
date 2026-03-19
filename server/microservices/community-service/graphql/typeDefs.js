@@ -1,20 +1,25 @@
 
 const typeDefs =`#graphql
   type CommunityPost {
+  id: ID!
+  title: String!
+  content: String!
+  category: String!
+  authorName: String
+  authorRole: String
+  createdAt: String
+}
+  type User {
     id: ID!
-    title: String!
-    content: String!
-    category: String!
-    aiSummary: String
-    createdAt: String
-    updatedAt: String
+    username: String!
+    role: String!
   }
-
   type HelpRequest {
     id: ID!
     description: String!
     location: String
     isResolved: Boolean
+    
     createdAt: String
     updatedAt: String
   }
