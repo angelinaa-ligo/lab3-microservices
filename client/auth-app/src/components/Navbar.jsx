@@ -4,12 +4,12 @@ function Navbar({ showBack }) {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    window.location.href = "http://localhost:4173/dashboard";
+    window.location.href = "http://localhost:3000/dashboard";
   };
 
   const handleLogout = async () => {
     try {
-      // 🔥 chama logout direto via fetch (SEM Apollo)
+      
       await fetch("http://localhost:4001/graphql", {
         method: "POST",
         credentials: "include",
@@ -27,7 +27,7 @@ function Navbar({ showBack }) {
     localStorage.clear();
     sessionStorage.clear();
 
-    window.location.replace("http://localhost:4173/");
+    window.location.replace("http://localhost:3000/");
   };
 
   return (

@@ -8,7 +8,7 @@ export default defineConfig({
     federation({
   name: "communityApp",
   remotes: {
-    authApp: "http://localhost:4173/assets/remoteEntry.js",
+    authApp: "http://localhost:3000/assets/remoteEntry.js",
   },
   shared: {
     react: { singleton: true, eager: true },
@@ -19,6 +19,6 @@ export default defineConfig({
 }),
   ],
   server: {
-    port: 5174,
+    port: 3001,
   },
 });
