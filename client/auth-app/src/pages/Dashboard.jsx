@@ -6,7 +6,7 @@ function Dashboard() {
   const { data, loading, error } = useQuery(GET_ME);
   const navigate = useNavigate();
  const goToCommunity = () => {
-    window.location.href = "http://localhost:5174";
+    window.location.href = "http://localhost:3002";
   };
   if (loading) return <p>Loading...</p>;
 const token = localStorage.getItem("token");
