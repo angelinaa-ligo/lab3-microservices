@@ -43,6 +43,16 @@ const typeDefs =`#graphql
 
     resolveHelpRequest(id: ID!): HelpRequest
   }
+
+  type AIResponse {
+  text: String!
+  suggestedQuestions: [String]!
+  retrievedPosts: [CommunityPost]!
+}
+
+extend type Query {
+  communityAIQuery(input: String!): AIResponse!
+}
 `;
 
 export default typeDefs;

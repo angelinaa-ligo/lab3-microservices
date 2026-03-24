@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import CommunityPost from "../models/CommunityPost.js";
 import HelpRequest from "../models/HelpRequest.js";
 import { config } from "../config/config.js";
+import { communityAIAgent } from "../services/communityAIAgent.js";
 
 
 const getUserFromRequest = (req) => {
@@ -31,7 +32,10 @@ const resolvers = {
     helpRequests: async () => {
       return HelpRequest.find();
     },
-    
+
+    communityAIQuery: async (_, { input })=>{
+      return await communityAIAgent(input);
+    },
     
   },
  
