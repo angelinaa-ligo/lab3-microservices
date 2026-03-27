@@ -1,6 +1,6 @@
 import Navbar from "authApp/Navbar";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { GET_POSTS, GET_HELP_REQUESTS } from "../apollo/queries";
+import { useQuery, useMutation, useLazyQuery } from "@apollo/client/react";
+import { GET_POSTS, GET_HELP_REQUESTS, COMMUNITY_AI_QUERY  } from "../apollo/queries";
 import {
   CREATE_POST,
   CREATE_HELP_REQUEST,
@@ -28,10 +28,15 @@ function Home() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("discussion");
+  const [aiInput, setAiInput] = useState("");
 
   const [createPost] = useMutation(CREATE_POST);
+  const [
+  askCommunityAI,
+  { data: aiData, loading: aiLoading, error: aiError }
+] = useLazyQuery(COMMUNITY_AI_QUERY);
 
-  // 🔥 CREATE POST (VALIDAÇÃO VIA BACKEND)
+  //  CREATE POST 
   const handleCreate = async () => {
     try {
       await createPost({
@@ -68,13 +73,23 @@ function Home() {
     }
   };
 
+  const handleAskAI = () => {
+  if (!aiInput.trim()) return;
+
+  askCommunityAI({
+    variables: { input: aiInput }
+  });
+
+  setAiInput("");
+};
+
   const formatTime = () => "";
 
   if (loading)
     return <p style={{ textAlign: "center" }}>Loading...</p>;
 
   if (error) return <p>Error loading posts</p>;
-
+console.log("AI DATA:", aiData);
   return (
     <>
       <Navbar showBack={true} />
@@ -141,6 +156,66 @@ function Home() {
 
         {/* SIDEBAR */}
         <div className="sidebar">
+        {/* 🤖 COMMUNITY AI CHAT */}
+<div className="ai-chat">
+  <h3 style={{ color: "black" }}>🤖 Community AI</h3>
+
+  <textarea
+    placeholder="Ask something about the community..."
+    value={aiInput}
+    onChange={(e) => setAiInput(e.target.value)}
+    rows={3}
+  />
+
+  <button onClick={handleAskAI} disabled={aiLoading}>
+    {aiLoading ? "Thinking..." : "Ask AI"}
+  </button>
+
+  {aiError && (
+    <p style={{ color: "red" }}>
+      Error getting AI response
+    </p>
+  )}
+
+ {aiData?.communityAIQuery && (
+    <div className="ai-response">
+      <strong>Answer:</strong>
+      <p>{aiData.communityAIQuery.text}</p>
+
+      <strong>Suggested Questions:</strong>
+      <ul>
+        {aiData.communityAIQuery.suggestedQuestions.map(
+          (q, index) => (
+            <li
+              key={index}
+              style={{ cursor: "pointer", color: "#007bff" }}
+              onClick={() => {
+                setAiInput(q);
+                askCommunityAI({
+                  variables: { input: q }
+                });
+              }}
+            >
+              {q}
+            </li>
+          )
+        )}
+      </ul>
+
+      <strong>Related Posts:</strong>
+      {aiData.communityAIQuery.retrievedPosts.map(
+        (post) => (
+          <div key={post.id} className="ai-post">
+            <p>
+              <strong>{post.title}</strong>
+            </p>
+            <small>by {post.authorName}</small>
+          </div>
+        )
+      )}
+    </div>
+  )}
+</div>
           <h3>🆘 Help Requests</h3>
 
           <div className="help-form">

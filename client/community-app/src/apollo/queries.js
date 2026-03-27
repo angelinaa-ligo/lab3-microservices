@@ -32,3 +32,18 @@ export const GET_HELP_REQUESTS = gql`
     }
   }
 `;
+
+export const COMMUNITY_AI_QUERY = gql`
+  query CommunityAIQuery($input: String!) {
+    communityAIQuery(input: $input) {
+      text
+      suggestedQuestions
+      retrievedPosts {
+        id
+        title
+        content
+        authorName
+      }
+    }
+  }
+`;
