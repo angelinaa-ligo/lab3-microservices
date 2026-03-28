@@ -90,6 +90,32 @@ function Home() {
 
   if (error) return <p>Error loading posts</p>;
 console.log("AI DATA:", aiData);
+
+
+
+let parsedAI = null;
+
+if (aiData?.communityAIQuery?.text) {
+  const rawText = aiData.communityAIQuery.text;
+
+  try {
+    const cleaned = rawText
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    parsedAI = JSON.parse(cleaned);
+  } catch (err) {
+    console.error("Erro ao parsear AI:", err);
+
+    
+    parsedAI = {
+      answer: rawText,
+      suggestedQuestions: []
+    };
+  }
+}
+
   return (
     <>
       <Navbar showBack={true} />
@@ -156,7 +182,7 @@ console.log("AI DATA:", aiData);
 
         {/* SIDEBAR */}
         <div className="sidebar">
-        {/* 🤖 COMMUNITY AI CHAT */}
+        {/* COMMUNITY AI CHAT */}
 <div className="ai-chat">
   <h3 style={{ color: "black" }}>🤖 Community AI</h3>
 
@@ -180,27 +206,23 @@ console.log("AI DATA:", aiData);
  {aiData?.communityAIQuery && (
     <div className="ai-response">
       <strong>Answer:</strong>
-      <p>{aiData.communityAIQuery.text}</p>
+      <p>{parsedAI?.answer || "No answer available"}</p>
 
       <strong>Suggested Questions:</strong>
-      <ul>
-        {aiData.communityAIQuery.suggestedQuestions.map(
-          (q, index) => (
-            <li
-              key={index}
-              style={{ cursor: "pointer", color: "#007bff" }}
-              onClick={() => {
-                setAiInput(q);
-                askCommunityAI({
-                  variables: { input: q }
-                });
-              }}
-            >
-              {q}
-            </li>
-          )
-        )}
-      </ul>
+      <div className="ai-suggestions">
+ {(parsedAI?.suggestedQuestions || []).map((q, index) => (
+    <button
+      key={index}
+      className="suggestion-btn"
+      onClick={() => {
+        setAiInput(q);
+        askCommunityAI({ variables: { input: q } });
+      }}
+    >
+      {q}
+    </button>
+  ))}
+</div>
 
       <strong>Related Posts:</strong>
       {aiData.communityAIQuery.retrievedPosts.map(

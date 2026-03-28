@@ -1,31 +1,35 @@
-import { GoogleGenAI } from "@google/genai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { PromptTemplate } from "@langchain/core/prompts";
 import CommunityPost from "../models/CommunityPost.js";
 import AIInteraction from "../models/AIInteraction.js";
 
-const genAI = new GoogleGenAI({
+const model = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
-  apiVersion: "v1"
+  model: "gemini-2.5-flash"
 });
 
-// Testa os modelos disponíveis
-(async () => {
-  try {
-    const models = await genAI.models.list();
-    console.log("🔥 AVAILABLE MODELS:", models);
-  } catch (err) {
-    console.error("❌ LIST MODELS ERROR:", err);
-  }
-})();
+
 
 export async function communityAIAgent(userInput) {
+  
   try {
-    // 🔑 Divide o input em palavras-chave e remove palavras pequenas
+    if (!userInput || userInput.trim().length < 3) {
+  return {
+  text: JSON.stringify({
+    answer: "Can you clarify your question?",
+    suggestedQuestions: []
+  }),
+  suggestedQuestions: [],
+  retrievedPosts: []
+};
+}
+    
     const keywords = userInput
       .toLowerCase()
       .split(/\s+/)
       .filter(word => word.length > 2);
 
-    // 🔎 Busca posts relacionados por título ou conteúdo usando regex
+    
     const posts = await CommunityPost.find({
       $or: keywords.flatMap(word => [
         { title: { $regex: word, $options: "i" } },
@@ -34,59 +38,71 @@ export async function communityAIAgent(userInput) {
     })
     .limit(5);
 
-    // Cria contexto com título + conteúdo para a AI
+    
     const context = posts
       .map(p => `Title: ${p.title}\nContent: ${p.content}`)
       .join("\n\n");
+const pastInteractions = await AIInteraction.find()
+  .sort({ createdAt: -1 })
+  .limit(2);
 
-    const prompt = `
+const previousText = pastInteractions.length > 0
+  ? pastInteractions.map(i => i.aiResponse).join("\n")
+  : "";
+    const promptTemplate = new PromptTemplate({
+  template: `
 You are a helpful assistant that answers user questions using ONLY the posts provided below.
 Do not make up new posts or events. Quote or summarize them directly.
 If no posts match, clearly say "No related posts found."
-
+Previous interactions:
+{previousText}
 Community posts:
-${context}
+{context}
 
-User question: ${userInput}
+User question: {question}
 
 Instructions:
 1. Answer clearly and concisely using the forum posts.
 2. Suggest 3 follow-up questions that are relevant to the user's original question, based on the context of the posts.
 3. Format your output as JSON:
-{
+{{
   "answer": "...",
   "suggestedQuestions": ["...","...","..."]
-}
-`;
+}}
+`,
+  inputVariables: ["context", "question", "previousText"]
+});const formattedPrompt = await promptTemplate.format({
+  context,
+  question: userInput,
+  previousText
+});
 
-    const result = await genAI.models.generateContent({
-      model: "models/gemini-2.5-flash",
-      contents: prompt,
-    });
+const response = await model.invoke(formattedPrompt);
 
-    // Tenta parsear JSON da resposta da AI
+    
+
     let parsed;
     try {
-      parsed = JSON.parse(result.text);
+      parsed = JSON.parse(response.content);
     } catch {
-      // fallback genérico se AI não retornar JSON válido
+      
       parsed = {
-        answer: result.text,
+        answer: response.content,
         suggestedQuestions: []
       };
     }
 
-    // Salva a interação no banco
+  
     await AIInteraction.create({
       userInput,
       aiResponse: parsed.answer,
       retrievedPostIds: posts.map(p => p._id)
     });
 
-    // Retorna resposta + posts + sugestões de perguntas
+    
     return {
   text: parsed.answer,
-  suggestedQuestions: parsed.suggestedQuestions || [], // garante que seja sempre array
+  suggestedQuestions: parsed.suggestedQuestions || [], 
   retrievedPosts: posts.map(post => ({
     id: post._id.toString(),
     title: post.title,
@@ -98,9 +114,9 @@ Instructions:
 };
 
   } catch (error) {
-    console.error("🔥 FULL ERROR:", error);
-    console.error("🔥 RESPONSE:", error?.response);
-    console.error("🔥 DETAILS:", error?.message);
-    throw error; // Mantém pra GraphQL
+    console.error("FULL ERROR:", error);
+    console.error("RESPONSE:", error?.response);
+    console.error("ETAILS:", error?.message);
+    throw error; 
   }
 }
